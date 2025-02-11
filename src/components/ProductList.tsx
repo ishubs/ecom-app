@@ -39,12 +39,13 @@ export default function ProductList() {
             sortOrder === 'asc' ? a.price - b.price : b.price - a.price
         );
     }, [filteredProducts, sortOrder]);
-
-    const fetchSearchResults = debounce(async (query) => {
-        if (!query) return;
+    const fetchSearchResults = useMemo(() => debounce(async (query) => {
+        if (!query) {
+            setSearchResults([]);
+            return;
+        }
         setLoadingSearch(true);
 
-        // Abort previous request if it exists
         if (searchAbortController.current) {
             searchAbortController.current.abort();
         }
@@ -67,7 +68,12 @@ export default function ProductList() {
         } finally {
             setLoadingSearch(false);
         }
-    }, 500);
+    }, 500), []);
+
+    const handleSearch = (value) => {
+        setSearchQuery(value);
+        fetchSearchResults(value);
+    };
 
     // Store the AbortController ref
     const searchAbortController = useRef<AbortController | null>(null);
@@ -90,15 +96,18 @@ export default function ProductList() {
                 </Select>
                 <AutoComplete
                     value={searchQuery}
-                    onChange={setSearchQuery}
+                    onChange={handleSearch}  // Instead of setSearchQuery
                     style={{ width: 300 }}
                     options={searchResults.map((product) => ({
                         value: product.name,
                         label: (
                             <Link href={`/products/${product.id}`}>
-                                {product.name}
+                                <div>
+                                    {product.name}
+                                </div>
                             </Link>
                         ),
+
                     }))}
                     placeholder="Search for products..."
                     allowClear
